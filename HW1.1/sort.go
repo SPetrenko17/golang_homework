@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -57,9 +58,6 @@ func validate(sortByColumn int, minColumns int, sortByNumbers bool, stringsFromF
 	return nil
 }
 
-func getFile() {
-
-}
 func main() {
 	ignoreUppercase := flag.Bool("f", false, "Ignore uppercase")
 	uniqueValues := flag.Bool("u", false, "Unique values")
@@ -79,85 +77,101 @@ func main() {
 	stringsFromFile, minColumns, err := readStrings(file)
 	if err != nil {
 		fmt.Println("error ReadStrings")
-		os.Exit(1)
+		return
 	}
 
 	validationError := validate(*sortByColumn, minColumns, *sortByNumbers, stringsFromFile)
 	if validationError != nil {
-		os.Exit(1)
+		fmt.Println("error validation")
+		return
 	}
 	err = mySort(&stringsFromFile, *ignoreUppercase, *sortDescending, *sortByNumbers, *sortByColumn)
 	if err != nil {
-		os.Exit(1)
+		fmt.Println("error mySort")
+		return
 	}
-	err = output(stringsFromFile, *fileOutput, *ignoreUppercase, *uniqueValues)
+	err = output(stringsFromFile, *fileOutput, *uniqueValues, *ignoreUppercase)
 	if err != nil {
-		os.Exit(1)
+		fmt.Println("error output")
+		return
 	}
 
 }
 
-func applyColumnSorting(left string, right string, columnsCount int) (string, string) {
-	left = strings.Fields(left)[columnsCount-1]
-	right = strings.Fields(right)[columnsCount-1]
-	return left, right
+func applyColumnSorting(left string, right string, columnsCount int) (leftColumn, rightColumn string) {
+	leftColumn = strings.Fields(left)[columnsCount-1]
+	rightColumn = strings.Fields(right)[columnsCount-1]
+	return
 }
 
-func applyIgnoreUppercase(left string, right string) (string, string) {
-	left = strings.ToLower(left)
-	right = strings.ToLower(right)
-	return left, right
+func applyIgnoreUppercase(left string, right string) (leftLower, rightLower string) {
+	leftLower = strings.ToLower(left)
+	rightLower = strings.ToLower(right)
+	return
 }
 
-func applySortByNumbers(left string, right string) (float64, float64, error) {
-	leftInt, err := strconv.Atoi(left)
-	if err != nil {
-		return 0, 0, err
-	}
-	rightInt, err := strconv.Atoi(right)
-	if err != nil {
-		return 0, 0, err
-	}
-	return float64(leftInt), float64(rightInt), nil
+func applySortByNumbers(left string, right string) (leftFloat, rightFloat float64) {
+	leftInt, _ := strconv.Atoi(left)
+	rightInt, _ := strconv.Atoi(right)
+	leftFloat = float64(leftInt)
+	rightFloat = float64(rightInt)
+	return
 }
 
-func compare(left, right interface{}, isNumeric, IsDescending bool) bool {
-	if isNumeric {
+func compare(left, right interface{}, IsDescending bool) bool {
+	lt := reflect.TypeOf(left).Kind()
+	rt := reflect.TypeOf(right).Kind()
+	if lt == reflect.Float64 && rt == reflect.Float64 {
 		if IsDescending {
 			return left.(float64) > right.(float64)
-		} else {
-			return left.(float64) < right.(float64)
 		}
-	} else {
-		if IsDescending {
-			return left.(string) > right.(string)
-		} else {
-			return left.(string) < right.(string)
+		return left.(float64) < right.(float64)
+	}
+	if IsDescending {
+		return left.(string) > right.(string)
+	}
+	return left.(string) < right.(string)
+
+}
+
+func validateNumbersAndColumns(strSlice []string, sortByNumbers bool, sortByColumn int) error {
+	if sortByNumbers && sortByColumn == 0 {
+		isNumSl := isNumbersSlice(strSlice)
+		if !isNumSl {
+			return errors.New("not number slice")
+		}
+	} else if sortByNumbers && sortByColumn != 0 {
+		column := make([]string, 0)
+		for i := 0; i < len(strSlice); i++ {
+			column = append(column)
+		}
+		isNumSl := isNumbersSlice(column)
+		if !isNumSl {
+			return errors.New("not number slice")
 		}
 	}
+	return nil
 }
 
 func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers bool, sortByColumn int) error {
+	err := validateNumbersAndColumns(*strSlice, sortByNumbers, sortByColumn)
+	if err != nil {
+		return errors.New("validation error ")
+	}
 	sort.Slice(*strSlice, func(i, j int) bool {
 		var left = (*strSlice)[i]
 		var right = (*strSlice)[j]
-
 		if sortByColumn > 0 {
 			left, right = applyColumnSorting(left, right, sortByColumn)
 		}
 		if ignoreUppercase {
 			left, right = applyIgnoreUppercase(left, right)
 		}
-
 		if sortByNumbers {
-			leftInt, rightInt, err := applySortByNumbers(left, right)
-			if err != nil {
-				os.Exit(1)
-			}
-			return compare(leftInt, rightInt, true, sortDescending)
-		} else {
-			return compare(left, right, false, sortDescending)
+			leftInt, rightInt := applySortByNumbers(left, right)
+			return compare(leftInt, rightInt, sortDescending)
 		}
+		return compare(left, right, sortDescending)
 	})
 	return nil
 }
@@ -170,7 +184,7 @@ func output(strings []string, filename string, uniqueValues, ignoreUppercase boo
 	if filename != "" {
 		f, err = os.Create(filename)
 		if err != nil {
-			isFileOutput = false
+			return errors.New("error read file")
 		}
 	} else {
 		isFileOutput = false
@@ -192,20 +206,20 @@ func output(strings []string, filename string, uniqueValues, ignoreUppercase boo
 				if err != nil {
 					return err
 				}
-			} else {
-				fmt.Println(strings[i])
+				continue
 			}
-
-		} else {
-			if isFileOutput {
-				_, err := fmt.Fprintln(f, strings[i])
-				if err != nil {
-					return err
-				}
-			} else {
-				fmt.Println(strings[i])
-			}
+			fmt.Println(strings[i])
+			continue
 		}
+		if isFileOutput {
+			_, err := fmt.Fprintln(f, strings[i])
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		fmt.Println(strings[i])
+
 	}
 	return nil
 }

@@ -35,29 +35,10 @@ func TestIsNumberSlice(t *testing.T) {
 }
 
 func TestCompare(t *testing.T) {
-	assert.Equal(t, false, compare(1.0, 2.0, true, true))
-	assert.Equal(t, true, compare(1.0, 2.0, true, false))
-	assert.Equal(t, false, compare("abc", "def", false, true))
-	assert.Equal(t, true, compare("abc", "def", false, false))
-}
-
-func TestApplySortByNumbers(t *testing.T) {
-	l1, l2, err := applySortByNumbers("123", "456")
-	assert.Nil(t, err, "no errors")
-	assert.Equal(t, 123.0, l1)
-	assert.Equal(t, 456.0, l2)
-	l1, l2, err = applySortByNumbers("hello", "moto")
-	assert.NotNil(t, err, "Not a number")
-	assert.Equal(t, 0.0, l1)
-	assert.Equal(t, 0.0, l2)
-	l1, l2, err = applySortByNumbers("1", "moto")
-	assert.NotNil(t, err, "Not a number")
-	assert.Equal(t, 0.0, l1)
-	assert.Equal(t, 0.0, l2)
-	l1, l2, err = applySortByNumbers("hello", "1")
-	assert.NotNil(t, err, "Not a number")
-	assert.Equal(t, 0.0, l1)
-	assert.Equal(t, 0.0, l2)
+	assert.Equal(t, false, compare(1.0, 2.0, true))
+	assert.Equal(t, true, compare(1.0, 2.0, false))
+	assert.Equal(t, false, compare("abc", "def", true))
+	assert.Equal(t, true, compare("abc", "def", false))
 }
 
 func TestApplyIgnoreUppercase(t *testing.T) {
@@ -81,7 +62,7 @@ func TestApplyColumnSorting(t *testing.T) {
 	assert.Equal(t, str2, "2")
 }
 
-func TestMySort(t *testing.T){
+func TestMySort(t *testing.T) {
 	var testSlice = make([]string, 0)
 	testSlice = append(testSlice, "1 4 3")
 	testSlice = append(testSlice, "8 9 5")
@@ -90,10 +71,8 @@ func TestMySort(t *testing.T){
 	expectedSlice = append(expectedSlice, "8 9 5")
 	expectedSlice = append(expectedSlice, "6 2 7")
 	expectedSlice = append(expectedSlice, "1 4 3")
-	_  = mySort(&testSlice,true, true, true, 1)
+	_ = mySort(&testSlice, true, true, true, 1)
 	assert.Equal(t, expectedSlice, testSlice)
-
-
 
 	testSlice = make([]string, 0)
 	testSlice = append(testSlice, "1 4 3")
@@ -103,9 +82,8 @@ func TestMySort(t *testing.T){
 	expectedSlice = append(expectedSlice, "6 2 7")
 	expectedSlice = append(expectedSlice, "1 4 3")
 	expectedSlice = append(expectedSlice, "8 9 5")
-	_  = mySort(&testSlice,true, false, true, 2)
+	_ = mySort(&testSlice, true, false, true, 2)
 	assert.Equal(t, expectedSlice, testSlice)
-
 
 	testSlice = make([]string, 0)
 	testSlice = append(testSlice, "11 42 33")
@@ -115,9 +93,8 @@ func TestMySort(t *testing.T){
 	expectedSlice = append(expectedSlice, "84 95 56")
 	expectedSlice = append(expectedSlice, "67 28 79")
 	expectedSlice = append(expectedSlice, "11 42 33")
-	_  = mySort(&testSlice,true, true, false, 0)
+	_ = mySort(&testSlice, true, true, false, 0)
 	assert.Equal(t, expectedSlice, testSlice)
-
 
 	testSlice = make([]string, 0)
 	testSlice = append(testSlice, "Napkin")
@@ -137,9 +114,8 @@ func TestMySort(t *testing.T){
 	expectedSlice = append(expectedSlice, "Book")
 	expectedSlice = append(expectedSlice, "BOOK")
 	expectedSlice = append(expectedSlice, "Apple")
-	_  = mySort(&testSlice,false, true, false, 0)
+	_ = mySort(&testSlice, false, true, false, 0)
 	assert.Equal(t, expectedSlice, testSlice)
-
 
 	testSlice = make([]string, 0)
 	testSlice = append(testSlice, "Napkin 2")
@@ -159,19 +135,19 @@ func TestMySort(t *testing.T){
 	expectedSlice = append(expectedSlice, "Napkin 2")
 	expectedSlice = append(expectedSlice, "Apple 1")
 	expectedSlice = append(expectedSlice, "Go 0")
-	err  := mySort(&testSlice,false, true, true, 2)
+	err := mySort(&testSlice, false, true, true, 2)
 	assert.Equal(t, expectedSlice, testSlice)
 	assert.Nil(t, err, "error in sort non-numeric strings")
 
 }
 
-func TestValidate(t *testing.T){
+func TestValidate(t *testing.T) {
 	testSlice := make([]string, 0)
 	testSlice = append(testSlice, "1 4")
 	testSlice = append(testSlice, "2 5")
 	testSlice = append(testSlice, "3 6")
-	err := validate(5,1,true,testSlice)
-	assert.NotNil(t, err ,"Columns error")
+	err := validate(5, 1, true, testSlice)
+	assert.NotNil(t, err, "Columns error")
 	testSlice = make([]string, 0)
 	testSlice = append(testSlice, "Napkin")
 	testSlice = append(testSlice, "Apple")
@@ -181,9 +157,8 @@ func TestValidate(t *testing.T){
 	testSlice = append(testSlice, "Hauptbahnhof")
 	testSlice = append(testSlice, "Book")
 	testSlice = append(testSlice, "Go")
-	assert.NotNil(t, validate(0,1,true, testSlice),"numbersFile error")
+	assert.NotNil(t, validate(0, 1, true, testSlice), "numbersFile error")
 }
-
 
 func printLinesToFile(filePath string, values []string) error {
 	f, err := os.Create(filePath)
@@ -207,7 +182,7 @@ func TestFileInputAndOutput(t *testing.T) {
 	testSlice = append(testSlice, "Hauptbahnhof")
 	testSlice = append(testSlice, "Book")
 	testSlice = append(testSlice, "Go")
-	_ = output(testSlice,"testFileOutput.txt",false, false)
+	_ = output(testSlice, "testFileOutput.txt", false, false)
 	file, err := os.Open("testFile.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -216,5 +191,3 @@ func TestFileInputAndOutput(t *testing.T) {
 	stringsFromFile, _, err := readStrings(file)
 	assert.Equal(t, testSlice, stringsFromFile)
 }
-
-
