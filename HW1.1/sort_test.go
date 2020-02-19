@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
@@ -32,13 +31,6 @@ func TestIsNumberSlice(t *testing.T) {
 	sl3 = append(sl3, "5 6 7 8")
 	sl3 = append(sl3, "9")
 	assert.Equal(t, true, isNumbersSlice(sl0))
-}
-
-func TestCompare(t *testing.T) {
-	assert.Equal(t, false, compare(1.0, 2.0, true))
-	assert.Equal(t, true, compare(1.0, 2.0, false))
-	assert.Equal(t, false, compare("abc", "def", true))
-	assert.Equal(t, true, compare("abc", "def", false))
 }
 
 func TestApplyIgnoreUppercase(t *testing.T) {
@@ -160,18 +152,6 @@ func TestValidate(t *testing.T) {
 	assert.NotNil(t, validate(0, 1, true, testSlice), "numbersFile error")
 }
 
-func printLinesToFile(filePath string, values []string) error {
-	f, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	for _, value := range values {
-		_, _ = fmt.Fprintln(f, value)
-	}
-	return nil
-}
-
 func TestFileInputAndOutput(t *testing.T) {
 	testSlice := make([]string, 0)
 	testSlice = append(testSlice, "Napkin")
@@ -190,4 +170,69 @@ func TestFileInputAndOutput(t *testing.T) {
 	defer file.Close()
 	stringsFromFile, _, err := readStrings(file)
 	assert.Equal(t, testSlice, stringsFromFile)
+}
+
+func TestCompareByNumbers(t *testing.T){
+	res, err := compareByNumbers("1","2",true)
+	assert.Nil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, false, res)
+
+	res, err = compareByNumbers("1","2",false)
+	assert.Nil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, true, res)
+
+	res, err = compareByNumbers("2","1",true)
+	assert.Nil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, true, res)
+
+	res, err = compareByNumbers("2","1",false)
+	assert.Nil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, false, res)
+
+	res, err = compareByNumbers("1hello","2",false)
+	assert.NotNil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, false, res)
+
+	res, err = compareByNumbers("1","2hello",false)
+	assert.NotNil(t, err, "error in compareByNumbers ")
+	assert.Equal(t, false, res)
+
+
+}
+
+func TestCompareByStrings(t *testing.T){
+	res := compareByString("1","2",true)
+	assert.Equal(t, false, res)
+	res = compareByString("11","2",true)
+	assert.Equal(t, false, res)
+	res = compareByString("2","1",true)
+	assert.Equal(t, true, res)
+	res = compareByString("22","11",true)
+	assert.Equal(t, true, res)
+	res = compareByString("apple","book",true)
+	assert.Equal(t, false, res)
+	res = compareByString("apple","book",false)
+	assert.Equal(t, true, res)
+}
+
+
+func TestValidateNumbersAndColumns(t *testing.T){
+	var testSlice = make([]string, 0)
+	testSlice = append(testSlice, "1 4 3")
+	testSlice = append(testSlice, "8 u 5")
+	testSlice = append(testSlice, "6 2 7")
+
+	err := validateNumbersAndColumns(testSlice,true,0)
+	assert.NotNil(t,err,"")
+
+	err = validateNumbersAndColumns(testSlice,true,1)
+	assert.Nil(t,err,"")
+	
+	testSlice = make([]string, 0)
+	testSlice = append(testSlice, "1 4 3")
+	testSlice = append(testSlice, "8 3 5")
+	testSlice = append(testSlice, "6 2 7")
+
+	err = validateNumbersAndColumns(testSlice,true,0)
+	assert.Nil(t,err,"")
 }

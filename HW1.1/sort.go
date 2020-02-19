@@ -8,7 +8,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -50,11 +49,9 @@ func validate(sortByColumn int, minColumns int, sortByNumbers bool, stringsFromF
 	if sortByColumn != 0 && sortByColumn > minColumns {
 		return errors.New("invaild column count ")
 	}
-
 	if sortByNumbers && !isNumbersSlice(stringsFromFile) {
 		return errors.New("invaild number file")
 	}
-
 	return nil
 }
 
@@ -76,23 +73,21 @@ func main() {
 
 	stringsFromFile, minColumns, err := readStrings(file)
 	if err != nil {
-		fmt.Println("error ReadStrings")
 		return
 	}
 
 	validationError := validate(*sortByColumn, minColumns, *sortByNumbers, stringsFromFile)
 	if validationError != nil {
-		fmt.Println("error validation")
 		return
 	}
 	err = mySort(&stringsFromFile, *ignoreUppercase, *sortDescending, *sortByNumbers, *sortByColumn)
 	if err != nil {
-		fmt.Println("error mySort")
+		fmt.Println("error in mySort")
 		return
 	}
 	err = output(stringsFromFile, *fileOutput, *uniqueValues, *ignoreUppercase)
 	if err != nil {
-		fmt.Println("error output")
+		fmt.Println("error in output")
 		return
 	}
 
@@ -110,28 +105,28 @@ func applyIgnoreUppercase(left string, right string) (leftLower, rightLower stri
 	return
 }
 
-func applySortByNumbers(left string, right string) (leftFloat, rightFloat float64) {
-	leftInt, _ := strconv.Atoi(left)
-	rightInt, _ := strconv.Atoi(right)
-	leftFloat = float64(leftInt)
-	rightFloat = float64(rightInt)
-	return
+func compareByString( left, right string, IsDescending bool ) bool{
+	if IsDescending{
+		return  left > right
+	}
+	return  left < right
 }
 
-func compare(left, right interface{}, IsDescending bool) bool {
-	lt := reflect.TypeOf(left).Kind()
-	rt := reflect.TypeOf(right).Kind()
-	if lt == reflect.Float64 && rt == reflect.Float64 {
-		if IsDescending {
-			return left.(float64) > right.(float64)
-		}
-		return left.(float64) < right.(float64)
+func compareByNumbers( left, right string, IsDescending bool ) (bool, error){
+	leftFloat, err := strconv.ParseFloat(left, 64)
+	if err != nil{
+		return false, err
 	}
-	if IsDescending {
-		return left.(string) > right.(string)
-	}
-	return left.(string) < right.(string)
+	rightFloat, err := strconv.ParseFloat(right, 64)
+	if err != nil{
 
+		return false, err
+	}
+
+	if IsDescending{
+		return  leftFloat > rightFloat, nil
+	}
+	return  leftFloat < rightFloat, nil
 }
 
 func validateNumbersAndColumns(strSlice []string, sortByNumbers bool, sortByColumn int) error {
@@ -156,7 +151,7 @@ func validateNumbersAndColumns(strSlice []string, sortByNumbers bool, sortByColu
 func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers bool, sortByColumn int) error {
 	err := validateNumbersAndColumns(*strSlice, sortByNumbers, sortByColumn)
 	if err != nil {
-		return errors.New("validation error ")
+		return errors.New("error in validateNumbersAndColumns ")
 	}
 	sort.Slice(*strSlice, func(i, j int) bool {
 		var left = (*strSlice)[i]
@@ -168,10 +163,15 @@ func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers b
 			left, right = applyIgnoreUppercase(left, right)
 		}
 		if sortByNumbers {
-			leftInt, rightInt := applySortByNumbers(left, right)
-			return compare(leftInt, rightInt, sortDescending)
+			res, err := compareByNumbers(left, right, sortDescending)
+			if err != nil{ // По плану всегда nil
+				fmt.Println("error in compareByNumbers")
+				os.Exit(1)
+			}
+			return res
 		}
-		return compare(left, right, sortDescending)
+
+		return compareByString(left, right, sortDescending)
 	})
 	return nil
 }
@@ -179,15 +179,14 @@ func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers b
 func output(strings []string, filename string, uniqueValues, ignoreUppercase bool) error {
 	var f *os.File
 	var err error
-	var isFileOutput = true
 
+	isFileOutput:= false
 	if filename != "" {
 		f, err = os.Create(filename)
 		if err != nil {
 			return errors.New("error read file")
 		}
-	} else {
-		isFileOutput = false
+		isFileOutput = true
 	}
 
 	for i := 0; i < len(strings); i++ {
