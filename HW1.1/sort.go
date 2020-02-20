@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"regexp"
@@ -67,17 +66,19 @@ func main() {
 	args := os.Args
 	file, err := os.Open(args[len(args)-1])
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("error in os.Open")
+		return
 	}
 	defer file.Close()
 
 	stringsFromFile, minColumns, err := readStrings(file)
 	if err != nil {
+		fmt.Println("error in readStrings")
 		return
 	}
-
 	validationError := validate(*sortByColumn, minColumns, *sortByNumbers, stringsFromFile)
 	if validationError != nil {
+		fmt.Println("error in validate")
 		return
 	}
 	err = mySort(&stringsFromFile, *ignoreUppercase, *sortDescending, *sortByNumbers, *sortByColumn)
@@ -171,7 +172,7 @@ func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers b
 		return compareByString(left, right, sortDescending)
 	})
 	if errorInSort != nil{
-		return errors.New("error in sortByNumbers")
+		return errorInSort
 	}
 	return nil
 }
