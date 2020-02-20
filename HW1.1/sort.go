@@ -153,6 +153,7 @@ func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers b
 	if err != nil {
 		return errors.New("error in validateNumbersAndColumns ")
 	}
+	var errorInSort error
 	sort.Slice(*strSlice, func(i, j int) bool {
 		var left = (*strSlice)[i]
 		var right = (*strSlice)[j]
@@ -163,16 +164,15 @@ func mySort(strSlice *[]string, ignoreUppercase, sortDescending, sortByNumbers b
 			left, right = applyIgnoreUppercase(left, right)
 		}
 		if sortByNumbers {
-			res, err := compareByNumbers(left, right, sortDescending)
-			if err != nil{ // По плану всегда nil
-				fmt.Println("error in compareByNumbers")
-				os.Exit(1)
-			}
+			res, sortErr := compareByNumbers(left, right, sortDescending)
+			errorInSort = sortErr
 			return res
 		}
-
 		return compareByString(left, right, sortDescending)
 	})
+	if errorInSort != nil{
+		return errors.New("error in sortByNumbers")
+	}
 	return nil
 }
 
@@ -218,7 +218,6 @@ func output(strings []string, filename string, uniqueValues, ignoreUppercase boo
 			continue
 		}
 		fmt.Println(strings[i])
-
 	}
 	return nil
 }
