@@ -24,43 +24,43 @@ type Operator struct {
 
 var OperandsMap = map[string]*Operator{
 	"+": {
-		Priority:  priorities["low"],
-		isUnary:   false,
+		Priority: priorities["low"],
+		isUnary:  false,
 		Operation: func(args []float64) float64 {
 			return args[0] + args[1]
 		},
 	},
 	"-": {
-		Priority:  priorities["low"],
-		isUnary:   false,
+		Priority: priorities["low"],
+		isUnary:  false,
 		Operation: func(args []float64) float64 {
 			return args[0] - args[1]
 		},
 	},
 	"*": {
-		Priority:  priorities["middle"],
-		isUnary:   false,
+		Priority: priorities["middle"],
+		isUnary:  false,
 		Operation: func(args []float64) float64 {
 			return args[0] * args[1]
 		},
 	},
 	"/": {
-		Priority:  priorities["middle"],
-		isUnary:   false,
+		Priority: priorities["middle"],
+		isUnary:  false,
 		Operation: func(args []float64) float64 {
 			return args[0] / args[1]
 		},
 	},
 	"unaryMinus": {
-		Priority:  priorities["highest"],
-		isUnary:   true,
+		Priority: priorities["highest"],
+		isUnary:  true,
 		Operation: func(args []float64) float64 {
 			return 0 - args[0]
 		},
 	},
 	"unaryPlus": {
-		Priority:  priorities["highest"],
-		isUnary:   true,
+		Priority: priorities["highest"],
+		isUnary:  true,
 		Operation: func(args []float64) float64 {
 			return args[0]
 		},
@@ -173,9 +173,6 @@ Loop:
 				solveOperation(*OperandsMap[ops.Pop()], floats)
 			}
 			ops.Pop()
-			//чекаем ++ -- ** //
-		case tok == prev && (tok == token.SUB || tok == token.ADD || tok == token.MUL || tok == token.QUO):
-			return 0, errors.New("duplicate operator token")
 		default:
 			fmt.Println("wrong input")
 			return 0, errors.New("wrong token")
@@ -208,9 +205,7 @@ func popNext(n1 string, n2 string) (bool, error) {
 	if !isOperator(n2) {
 		return false, nil
 	}
-	if n1 == "unaryMinus" {
-		return false, nil
-	} else if n1 == "unaryPlus" {
+	if n1 == "unaryMinus" || n1 == "unaryPlus" {
 		return false, nil
 	}
 	op1, err := getOperator(n1)
@@ -225,17 +220,17 @@ func popNext(n1 string, n2 string) (bool, error) {
 }
 
 func solveOperation(op Operator, floats *FloatStack) { //вычисляем базовые операции
-	var argsCount int
-	if op.isUnary {
-		argsCount = 1
+	if op.isUnary  {
+		args := make([]float64, 1)
+		args[0] = floats.Pop()
+		floats.Push(op.Operation(args))
 	} else {
-		argsCount = 2
+		args := make([]float64, 2)
+		args[1] = floats.Pop()
+		args[0] = floats.Pop()
+		floats.Push(op.Operation(args))
 	}
-	var args = make([]float64, argsCount)
-	for i := argsCount - 1; i >= 0; i-- {
-		args[i] = floats.Pop()
-	}
-	floats.Push(op.Operation(args))
+
 }
 
 func isOperand(t token.Token) bool {
@@ -256,12 +251,6 @@ func getOperator(str string) (*Operator, error) {
 	}
 	return nil, errors.New("wrong operator")
 }
-
-func isNumeric(s string) bool {
-	_, err := strconv.ParseFloat(s, 64)
-	return err == nil
-}
-
 func validation(input string) bool {
 	regexWrongSymbols := regexp.MustCompile("[^\\+\\-\\*\\/\\)\\(0-9]")
 	wrongSymbols := regexWrongSymbols.FindAllString(input, -1)
